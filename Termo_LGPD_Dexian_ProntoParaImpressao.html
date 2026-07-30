@@ -28,23 +28,26 @@
             width: 210mm;
             min-height: 297mm;
             margin: 0 auto 30px auto;
-            padding: 20mm 20mm 28mm 20mm;
+            padding: 18mm 18mm 28mm 18mm;
             /* Degradê verde limão no canto superior direito esfumaçando para o branco */
             background: radial-gradient(circle at top right, #cbfb10 0%, #f4fdf0 30%, #ffffff 55%) !important;
             background-color: #ffffff !important;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             box-sizing: border-box;
             position: relative;
+            overflow: hidden;
             page-break-after: always;
             break-after: page;
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
 
         /* Rodapé com numeração */
         .page-footer {
             position: absolute;
-            left: 20mm;
-            right: 20mm;
-            bottom: 10mm;
+            left: 18mm;
+            right: 18mm;
+            bottom: 9mm;
             display: flex;
             align-items: flex-end;
             justify-content: space-between;
@@ -75,8 +78,8 @@
             align-self: flex-end;
         }
         .a4-page.page-1 .page-footer {
-            left: 18mm;
-            right: 18mm;
+            left: 16mm;
+            right: 16mm;
         }
         
         .a4-page:last-child {
@@ -175,12 +178,12 @@
             width: 100%;
             max-width: 100%;
             min-width: 55%;
-            font-size: 11.5px;
+            font-size: 9.5px;
         }
 
         /* Página 1: espaçamento mais compacto para caber na área imprimível */
         .a4-page.page-1 {
-            padding: 16mm 18mm 26mm 18mm;
+            padding: 14mm 16mm 26mm 16mm;
         }
         .a4-page.page-1 .header {
             margin-bottom: 14px;
@@ -200,6 +203,45 @@
             margin-top: 4px;
             margin-bottom: 8px;
             font-size: 12.5px;
+        }
+
+        /* Páginas densas (listas / várias seções): cabe em 1 folha A4 */
+        .a4-page.page-dense {
+            padding: 12mm 14mm 26mm 14mm;
+            font-size: 11.5px;
+            line-height: 1.4;
+        }
+        .a4-page.page-dense .page-footer {
+            left: 14mm;
+            right: 14mm;
+        }
+        .a4-page.page-dense h2 {
+            margin-top: 2px;
+            margin-bottom: 6px;
+            font-size: 12px;
+        }
+        .a4-page.page-dense .row {
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+        }
+        .a4-page.page-dense p {
+            margin-top: 0.25em;
+            margin-bottom: 0.25em;
+        }
+        .a4-page.page-dense ul {
+            margin-top: 2px;
+            margin-bottom: 2px;
+            padding-left: 16px;
+        }
+        .a4-page.page-dense li {
+            margin-bottom: 1px;
+            line-height: 1.35;
+        }
+        .a4-page.page-dense .br-col {
+            padding-right: 12px;
+        }
+        .a4-page.page-dense .us-col {
+            padding-left: 12px;
         }
         
         /* Assinaturas */
@@ -231,43 +273,67 @@
         /* Regras Específicas para Impressão */
         @media print {
             @page {
-                size: A4;
-                margin: 0; /* Remove as margens do navegador para o background preencher tudo */
+                size: A4 portrait;
+                margin: 0;
             }
-            body {
-                background-color: transparent !important;
-                padding: 0;
+            html, body {
+                width: 210mm;
+                height: auto;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: transparent !important;
             }
             .document-wrapper {
-                padding: 0;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 210mm;
             }
             .a4-page {
                 margin: 0 !important;
                 box-shadow: none !important;
                 width: 210mm !important;
-                max-width: 210mm !important;
-                height: 297mm !important; /* Força cada página a ocupar exatamente 1 folha A4 */
-                max-height: 297mm !important;
-                overflow: hidden; /* impede conteúdo de sair das bordas da folha */
+                min-height: 0 !important;
+                /* 296mm evita página em branco por arredondamento do Chrome */
+                height: 296mm !important;
+                max-height: 296mm !important;
+                overflow: hidden !important;
                 border-radius: 0;
-                padding: 18mm 18mm 26mm 18mm !important;
-                page-break-after: always;
-                break-after: page;
+                padding: 14mm 14mm 24mm 14mm !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                page-break-after: auto !important;
+                break-after: auto !important;
+                page-break-before: auto !important;
+                break-before: auto !important;
+                display: block !important;
+            }
+            /* Uma quebra explícita só no início de cada página após a 1ª */
+            .a4-page + .a4-page {
+                page-break-before: always !important;
+                break-before: page !important;
             }
             .a4-page.page-1 {
-                padding: 14mm 16mm 24mm 16mm !important;
+                padding: 12mm 14mm 24mm 14mm !important;
+            }
+            .a4-page.page-dense {
+                padding: 10mm 12mm 24mm 12mm !important;
             }
             .a4-page .page-footer {
-                left: 18mm;
-                right: 18mm;
-                bottom: 9mm;
+                left: 14mm !important;
+                right: 14mm !important;
+                bottom: 8mm !important;
             }
-            .a4-page.page-1 .page-footer {
-                left: 16mm;
-                right: 16mm;
+            .a4-page.page-1 .page-footer,
+            .a4-page.page-dense .page-footer {
+                left: 12mm !important;
+                right: 12mm !important;
+            }
+            .row {
+                page-break-inside: avoid;
+                break-inside: avoid;
             }
             input[type="text"] {
-                background: transparent !important; /* Remove fundo cinza do input na impressão */
+                background: transparent !important;
                 color: #000 !important;
             }
         }
@@ -321,7 +387,7 @@
     </div>
 
     <!-- PÁGINA 2 -->
-    <div class="a4-page">
+    <div class="a4-page page-dense">
         <div class="row">
             <div class="br-col">
                 <h2>II - ESCOPO DO PROCESSAMENTO DE DADOS</h2>
@@ -402,7 +468,7 @@
     </div>
 
     <!-- PÁGINA 3 -->
-    <div class="a4-page">
+    <div class="a4-page page-dense">
         <div class="row">
             <div class="br-col">
                 <h2>IV - DA SEGURANÇA DOS DADOS E TÉRMINO DO TRATAMENTO DE DADOS</h2>
@@ -458,7 +524,7 @@
     </div>
 
     <!-- PÁGINA 4 -->
-    <div class="a4-page">
+    <div class="a4-page page-dense">
         <div class="row">
             <div class="br-col">
                 <p>6.3. A DEXIAN poderá manter e processar os dados pessoais do TITULAR pelo período necessário para o devido cumprimento da finalidade em comento, inclusive para futuras oportunidades de prestação de serviços.</p>
