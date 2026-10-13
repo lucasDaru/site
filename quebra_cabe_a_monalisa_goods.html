@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quebra-Cabeça Monalisa Goods - 2º Ano B</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Canvas Confetti Library for Victory Celebration -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <!-- Custom Kid-Friendly Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Fredoka', 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #fbcfe8 50%, #fef3c7 100%);
+            min-height: 100vh;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .tile-card {
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+            touch-action: manipulation;
+        }
+
+        .tile-card:hover {
+            transform: scale(1.03);
+            z-index: 5;
+        }
+
+        .tile-selected {
+            outline: 5px solid #ec4899;
+            outline-offset: -2px;
+            transform: scale(0.95) !important;
+            box-shadow: 0 0 20px rgba(236, 72, 153, 0.7);
+            z-index: 10;
+        }
+
+        .drop-target {
+            outline: 4px dashed #3b82f6;
+            outline-offset: -4px;
+            transform: scale(1.02);
+        }
+
+        @keyframes pulse-subtle {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .animate-pulse-subtle {
+            animation: pulse-subtle 2s infinite ease-in-out;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #f472b6;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-slate-800 pb-10">
+
+    <header class="w-full bg-white/85 backdrop-blur-md shadow-md py-3 px-4 sticky top-0 z-20 border-b-4 border-pink-300">
+        <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-gradient-to-tr from-pink-400 to-rose-400 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-md transform -rotate-3">
+                    🎨
+                </div>
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-pink-600 tracking-wide">Monalisa Goods</h1>
+                    <p class="text-xs sm:text-sm text-slate-500 font-bold">Colégio Constelação • 2º Ano B</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <span class="bg-amber-100 text-amber-800 text-xs sm:text-sm font-extrabold px-3 py-1.5 rounded-full border border-amber-300 shadow-sm flex items-center gap-1">
+                    ✨ Quebra-Cabeça 3x3
+                </span>
+                <button onclick="speakSpeechText()" id="audio-btn" class="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 text-white px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold transition flex items-center gap-1.5 shadow-md">
+                    🔊 Ouvir História
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto w-full px-4 mt-6 flex-1 flex flex-col items-center">
+
+        <!-- Controls & Stats Bar -->
+        <div class="w-full bg-white/90 rounded-3xl p-4 shadow-xl border-2 border-pink-200 mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            
+            <!-- Stats Display -->
+            <div class="flex items-center justify-center gap-4 sm:gap-6 w-full md:w-auto">
+                <div class="text-center bg-blue-50/80 px-4 py-2 rounded-2xl border border-blue-200 min-w-[100px] shadow-sm">
+                    <span class="block text-xs uppercase font-extrabold text-blue-500 tracking-wider">Movimentos</span>
+                    <span id="move-count" class="text-2xl sm:text-3xl font-black text-blue-700">0</span>
+                </div>
+                <div class="text-center bg-purple-50/80 px-4 py-2 rounded-2xl border border-purple-200 min-w-[100px] shadow-sm">
+                    <span class="block text-xs uppercase font-extrabold text-purple-500 tracking-wider">Tempo</span>
+                    <span id="timer-display" class="text-2xl sm:text-3xl font-black text-purple-700">00:00</span>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap items-center justify-center gap-2.5 w-full md:w-auto">
+                <button id="shuffle-btn" onclick="shuffleTiles()" class="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-extrabold py-2.5 px-5 rounded-2xl shadow-md active:scale-95 transition flex items-center gap-2 text-sm sm:text-base border border-pink-300">
+                    🔀 Embaralhar
+                </button>
+                <button onclick="toggleHintModal(true)" class="bg-amber-400 hover:bg-amber-500 text-amber-950 font-extrabold py-2.5 px-4 rounded-2xl shadow-md active:scale-95 transition flex items-center gap-1.5 text-sm sm:text-base border border-amber-300">
+                    💡 Dica
+                </button>
+                <button onclick="speakSpeechText()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold py-2.5 px-4 rounded-2xl shadow-md active:scale-95 transition flex items-center gap-1.5 text-sm sm:text-base border border-emerald-400">
+                    🔊 Ouvir História
+                </button>
+            </div>
+        </div>
+
+        <div class="w-full max-w-[560px] bg-white/70 backdrop-blur-sm text-slate-700 font-bold mb-4 px-4 py-2.5 rounded-2xl text-xs sm:text-sm border border-pink-200 shadow-sm text-center">
+            🎯 <strong>Como Jogar:</strong> Arraste e solte uma peça sobre a outra, ou clique em duas peças para trocá-las de lugar até montar os 9 quadros na ordem correta!
+        </div>
+
+        <!-- Puzzle Container Grid -->
+        <div id="puzzle-container" class="w-full max-w-[560px] aspect-square bg-white/40 backdrop-blur-md p-2.5 sm:p-3.5 rounded-3xl shadow-2xl border-4 border-white grid grid-cols-3 gap-2.5 sm:gap-3">
+            <!-- Tiles generated dynamically via JS -->
+        </div>
+
+    </main>
+
+    <!-- Hint Preview Modal -->
+    <div id="hint-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-2xl border-4 border-pink-300 flex flex-col items-center">
+            <h3 class="text-xl sm:text-2xl font-black text-pink-600 mb-1">Guia de Referência</h3>
+            <p class="text-xs sm:text-sm text-slate-500 font-bold mb-4 text-center">A ordem correta dos 9 quadros da Monalisa Goods:</p>
+            
+            <div class="w-full rounded-2xl overflow-hidden border-2 border-slate-200 shadow-inner bg-slate-100 mb-5 flex items-center justify-center">
+                <img id="hint-image-preview" src="" alt="Dica da Imagem Completa" class="w-full h-auto max-h-[55vh] object-contain">
+            </div>
+            
+            <button onclick="toggleHintModal(false)" class="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-extrabold py-3 rounded-2xl shadow-lg transition text-base">
+                Entendi! Voltar ao Jogo
+            </button>
+        </div>
+    </div>
+
+    <!-- Victory Modal -->
+    <div id="victory-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-gradient-to-b from-amber-50 via-white to-pink-50 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border-4 border-yellow-300 flex flex-col items-center text-center">
+            <div class="w-20 h-20 bg-amber-400 rounded-full flex items-center justify-center text-4xl shadow-xl mb-3 border-4 border-white animate-pulse-subtle">
+                🏆
+            </div>
+            <h2 class="text-3xl font-black text-pink-600 mb-1">Parabéns!!</h2>
+            <p class="text-slate-600 font-bold text-sm sm:text-base mb-4">Você completou o quebra-cabeça da Monalisa Goods!</p>
+            
+            <div class="bg-white/90 w-full rounded-2xl p-4 border border-pink-200 mb-5 shadow-sm space-y-2">
+                <div class="flex justify-between items-center text-sm font-bold">
+                    <span class="text-slate-500">Movimentos Totais:</span>
+                    <span id="final-moves" class="text-pink-600 font-black text-xl">0</span>
+                </div>
+                <div class="flex justify-between items-center text-sm font-bold">
+                    <span class="text-slate-500">Tempo de Jogo:</span>
+                    <span id="final-time" class="text-purple-600 font-black text-xl">00:00</span>
+                </div>
+            </div>
+
+            <button onclick="speakSpeechText()" class="w-full bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white font-extrabold py-3.5 rounded-2xl shadow-md transition flex items-center justify-center gap-2 mb-3 text-sm sm:text-base">
+                🔊 Ouvir a História Novamente
+            </button>
+
+            <button onclick="restartGame()" class="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-extrabold py-3.5 rounded-2xl shadow-lg transition text-base">
+                🎮 Jogar Novamente
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Storyboard dialogue texts for each panel
+        const PANEL_TEXTS = [
+            'Olá!',
+            'Olá, sou a Monalisa Goods!',
+            'Faço parte do trabalho do segundo ano B',
+            'do Colégio Constelação.',
+            'Sou inspirada na obra de Leonardo da Vinci - Mona Lisa.',
+            'Monalisa Goods',
+            'Monalisa Goods',
+            'Monalisa Goods',
+            'Monalisa Goods'
+        ];
+
+        // Speech Synthesis narration text
+        const NARRATION_TEXT = "Olá, sou a Monalisa Goods, faço parte do trabalho do segundo ano B do colégio Constelação. Sou inspirada na obra de Leonardo Da Vinci - Monalisa.";
+
+        let tiles = []; 
+        let selectedTileIndex = null;
+        let moveCount = 0;
+        let timerSeconds = 0;
+        let timerInterval = null;
+        let gameStarted = false;
+        let mainCanvas = null;
+        let slicedTileImages = [];
+
+        /**
+         * Renders the complete 9-quadro Monalisa Goods storyboard image directly onto an HTML5 Canvas
+         */
+        function renderDefaultStoryboardCanvas() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 900;
+            canvas.height = 900;
+            const ctx = canvas.getContext('2d');
+
+            // Draw each panel on a 3x3 grid
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 3; col++) {
+                    const idx = row * 3 + col;
+                    const x = col * 300;
+                    const y = row * 300;
+
+                    // 1. Panel Sky Background (Blue crayon gradient)
+                    const skyGrad = ctx.createLinearGradient(x, y, x, y + 300);
+                    skyGrad.addColorStop(0, '#38bdf8');
+                    skyGrad.addColorStop(0.6, '#7dd3fc');
+                    skyGrad.addColorStop(1, '#bae6fd');
+                    ctx.fillStyle = skyGrad;
+                    ctx.fillRect(x, y, 300, 300);
+
+                    // Sun element (top left in panel 0, 3, 6)
+                    if (col === 0) {
+                        ctx.fillStyle = '#fde047';
+                        ctx.beginPath();
+                        ctx.arc(x + 20, y + 180, 45, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                    // 2. Vibrant Rainbow behind character
+                    ctx.save();
+                    const rx = x + 150;
+                    const ry = y + 270;
+                    const rainbowColors = ['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#38bdf8', '#c084fc'];
+                    rainbowColors.forEach((color, i) => {
+                        ctx.beginPath();
+                        ctx.arc(rx, ry, 175 - (i * 9), Math.PI, 0, false);
+                        ctx.lineWidth = 9;
+                        ctx.strokeStyle = color;
+                        ctx.globalAlpha = 0.85;
+                        ctx.stroke();
+                    });
+                    ctx.restore();
+
+                    // 3. Tree trunks on sides
+                    if (col === 0) {
+                        ctx.fillStyle = '#854d0e';
+                        ctx.fillRect(x, y, 35, 300);
+                    }
+
+                    // 4. Green Bushes with Red Berries in foreground
+                    ctx.fillStyle = '#22c55e';
+                    ctx.beginPath();
+                    ctx.arc(x + 40, y + 250, 55, 0, Math.PI * 2);
+                    ctx.arc(x + 150, y + 260, 65, 0, Math.PI * 2);
+                    ctx.arc(x + 260, y + 250, 55, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Red Berries
+                    ctx.fillStyle = '#e11d48';
+                    const berriesPos = [
+                        [x + 35, y + 230], [x + 75, y + 250], [x + 115, y + 225],
+                        [x + 185, y + 230], [x + 225, y + 255], [x + 265, y + 235]
+                    ];
+                    berriesPos.forEach(([bx, by]) => {
+                        ctx.beginPath();
+                        ctx.arc(bx, by, 7.5, 0, Math.PI * 2);
+                        ctx.fill();
+                        // Berry stem
+                        ctx.strokeStyle = '#15803d';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(bx, by - 7);
+                        ctx.lineTo(bx + 2, by - 12);
+                        ctx.stroke();
+                    });
+
+                    // 5. Monalisa Goods Character
+                    const cx = x + 150;
+                    const cy = y + 175;
+
+                    // Striped Pink & White Sweater
+                    ctx.fillStyle = '#f472b6';
+                    ctx.beginPath();
+                    ctx.ellipse(cx, cy + 95, 75, 55, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    // White Sweater Stripes
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 5;
+                    ctx.beginPath();
+                    ctx.moveTo(cx - 60, cy + 80); ctx.lineTo(cx + 60, cy + 80);
+                    ctx.moveTo(cx - 65, cy + 98); ctx.lineTo(cx + 65, cy + 98);
+                    ctx.moveTo(cx - 55, cy + 115); ctx.lineTo(cx + 55, cy + 115);
+                    ctx.stroke();
+
+                    // Long Brown Hair (Back)
+                    ctx.fillStyle = '#582f0e';
+                    ctx.beginPath();
+                    ctx.ellipse(cx, cy + 10, 75, 70, 0, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Face Skin
+                    ctx.fillStyle = '#fed7aa';
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 52, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Long Hair Sides
+                    ctx.fillStyle = '#582f0e';
+                    ctx.beginPath();
+                    ctx.ellipse(cx - 48, cy + 25, 20, 45, 0.2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.ellipse(cx + 48, cy + 25, 20, 45, -0.2, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Brown Beret Hat
+                    ctx.fillStyle = '#a16207';
+                    ctx.beginPath();
+                    ctx.ellipse(cx, cy - 42, 65, 25, -0.05, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // White Daisy Flower on Hat
+                    ctx.fillStyle = '#ffffff';
+                    for (let d = 0; d < 6; d++) {
+                        const ang = (d * Math.PI) / 3;
+                        ctx.beginPath();
+                        ctx.arc(cx + 30 + Math.cos(ang) * 9, cy - 40 + Math.sin(ang) * 9, 5.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.fillStyle = '#facc15';
+                    ctx.beginPath();
+                    ctx.arc(cx + 30, cy - 40, 5.5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Eyes & Expression variations
+                    ctx.fillStyle = '#291505';
+                    const isWinking = (idx === 2 || idx === 4 || idx === 8);
+                    const isClosedEyes = (idx === 6);
+
+                    if (isClosedEyes) {
+                        // Sleeping/happy closed eyes (arches)
+                        ctx.strokeStyle = '#291505';
+                        ctx.lineWidth = 3.5;
+                        ctx.beginPath();
+                        ctx.arc(cx - 20, cy - 2, 9, Math.PI, 0);
+                        ctx.arc(cx + 20, cy - 2, 9, Math.PI, 0);
+                        ctx.stroke();
+                    } else if (isWinking) {
+                        // Open eye left
+                        ctx.beginPath();
+                        ctx.arc(cx - 20, cy - 5, 8, 0, Math.PI * 2); ctx.fill();
+                        // Winking eye right (arch)
+                        ctx.strokeStyle = '#291505';
+                        ctx.lineWidth = 3.5;
+                        ctx.beginPath();
+                        ctx.arc(cx + 20, cy - 3, 9, Math.PI, 0); ctx.stroke();
+                        // Eye shine
+                        ctx.fillStyle = '#ffffff';
+                        ctx.beginPath();
+                        ctx.arc(cx - 22, cy - 7, 3, 0, Math.PI * 2); ctx.fill();
+                    } else {
+                        // Two open eyes
+                        ctx.beginPath();
+                        ctx.arc(cx - 20, cy - 5, 8, 0, Math.PI * 2); ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(cx + 20, cy - 5, 8, 0, Math.PI * 2); ctx.fill();
+                        // Eye shines
+                        ctx.fillStyle = '#ffffff';
+                        ctx.beginPath();
+                        ctx.arc(cx - 22, cy - 7, 3, 0, Math.PI * 2); ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(cx + 18, cy - 7, 3, 0, Math.PI * 2); ctx.fill();
+                    }
+
+                    // Cute Nose & Mouth
+                    ctx.fillStyle = '#9a3412';
+                    ctx.beginPath();
+                    ctx.arc(cx, cy + 8, 4, 0, Math.PI * 2); ctx.fill();
+                    
+                    ctx.strokeStyle = '#291505';
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy + 11, 6, 0, Math.PI); ctx.stroke();
+
+                    // Sparkle rays / Heart accents
+                    if (idx === 1 || idx === 2 || idx === 7) {
+                        // White sparkle lines near head
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.moveTo(cx - 55, cy - 20); ctx.lineTo(cx - 70, cy - 28);
+                        ctx.moveTo(cx + 55, cy - 20); ctx.lineTo(cx + 70, cy - 28);
+                        ctx.stroke();
+                    }
+                    if (idx === 3 || idx === 4 || idx === 5 || idx === 6 || idx === 8) {
+                        // Pink heart
+                        ctx.fillStyle = '#ec4899';
+                        ctx.font = '22px Arial';
+                        ctx.fillText('♥', cx + 52, cy - 10);
+                    }
+
+                    // 6. Speech Bubbles / Titles
+                    if (PANEL_TEXTS[idx] && idx < 5) {
+                        // Dark rounded bubble at bottom of panel
+                        ctx.fillStyle = 'rgba(23, 23, 23, 0.82)';
+                        ctx.beginPath();
+                        ctx.roundRect(x + 12, y + 232, 276, 46, 12);
+                        ctx.fill();
+
+                        ctx.fillStyle = '#ffffff';
+                        ctx.font = 'bold 13px Fredoka, Nunito, sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(PANEL_TEXTS[idx], x + 150, y + 255);
+                    } else if (idx === 5 || idx === 8) {
+                        // Crayon title on top/bottom
+                        ctx.fillStyle = '#854d0e';
+                        ctx.font = 'bold 20px Fredoka, sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('Monalisa Goods', x + 150, y + 265);
+                    }
+
+                    // Top class label "2ºB ♥" on panel 0, 6, 8
+                    if (idx === 0 || idx === 6 || idx === 8) {
+                        ctx.fillStyle = '#f43f5e';
+                        ctx.font = 'bold 16px Fredoka, sans-serif';
+                        ctx.textAlign = 'right';
+                        ctx.fillText('2º B ♥', x + 285, y + 25);
+                    }
+
+                    // Frame border around each panel
+                    ctx.strokeStyle = '#e2e8f0';
+                    ctx.lineWidth = 6;
+                    ctx.strokeRect(x, y, 300, 300);
+                }
+            }
+
+            return canvas;
+        }
+
+        function sliceCanvasToTiles(sourceCanvas) {
+            slicedTileImages = [];
+            const tileWidth = sourceCanvas.width / 3;
+            const tileHeight = sourceCanvas.height / 3;
+
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 3; col++) {
+                    const tileCanvas = document.createElement('canvas');
+                    tileCanvas.width = 300;
+                    tileCanvas.height = 300;
+                    const tCtx = tileCanvas.getContext('2d');
+
+                    tCtx.drawImage(
+                        sourceCanvas,
+                        col * tileWidth, row * tileHeight, tileWidth, tileHeight,
+                        0, 0, 300, 300
+                    );
+
+                    slicedTileImages.push(tileCanvas.toDataURL());
+                }
+            }
+
+            // Set hint modal preview image
+            document.getElementById('hint-image-preview').src = sourceCanvas.toDataURL();
+        }
+
+        function initGame() {
+            mainCanvas = renderDefaultStoryboardCanvas();
+            sliceCanvasToTiles(mainCanvas);
+            
+            // Create 9 tile objects
+            tiles = Array.from({ length: 9 }, (_, index) => ({
+                id: index,
+                imageSrc: slicedTileImages[index]
+            }));
+
+            moveCount = 0;
+            timerSeconds = 0;
+            updateStatsDisplay();
+            stopTimer();
+
+            shuffleTiles();
+        }
+
+        function renderBoard() {
+            const container = document.getElementById('puzzle-container');
+            container.innerHTML = '';
+
+            tiles.forEach((tile, index) => {
+                const tileEl = document.createElement('div');
+                tileEl.className = `tile-card relative rounded-2xl overflow-hidden cursor-pointer shadow-md border-2 border-white bg-slate-100 select-none ${selectedTileIndex === index ? 'tile-selected' : ''}`;
+                tileEl.dataset.index = index;
+                tileEl.draggable = true;
+
+                tileEl.style.backgroundImage = `url(${tile.imageSrc})`;
+                tileEl.style.backgroundSize = 'cover';
+                tileEl.style.backgroundPosition = 'center';
+
+                // Number badge
+                const badge = document.createElement('div');
+                badge.className = 'absolute top-2 left-2 bg-pink-500/90 text-white font-black text-xs sm:text-sm w-6 h-6 rounded-full flex items-center justify-center shadow border border-white';
+                badge.innerText = `${tile.id + 1}`;
+                tileEl.appendChild(badge);
+
+                // Click to Swap
+                tileEl.addEventListener('click', () => handleTileClick(index));
+
+                // Drag and Drop
+                tileEl.addEventListener('dragstart', (e) => handleDragStart(e, index));
+                tileEl.addEventListener('dragover', handleDragOver);
+                tileEl.addEventListener('dragenter', handleDragEnter);
+                tileEl.addEventListener('dragleave', handleDragLeave);
+                tileEl.addEventListener('drop', (e) => handleDrop(e, index));
+
+                container.appendChild(tileEl);
+            });
+        }
+
+        function handleTileClick(index) {
+            startTimer();
+
+            if (selectedTileIndex === null) {
+                selectedTileIndex = index;
+            } else if (selectedTileIndex === index) {
+                selectedTileIndex = null;
+            } else {
+                swapTiles(selectedTileIndex, index);
+                selectedTileIndex = null;
+            }
+            renderBoard();
+        }
+
+        function handleDragStart(e, index) {
+            startTimer();
+            e.dataTransfer.setData('text/plain', index);
+            selectedTileIndex = index;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            this.classList.add('drop-target');
+        }
+
+        function handleDragLeave() {
+            this.classList.remove('drop-target');
+        }
+
+        function handleDrop(e, targetIndex) {
+            e.preventDefault();
+            this.classList.remove('drop-target');
+            const sourceIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+            if (!isNaN(sourceIndex) && sourceIndex !== targetIndex) {
+                swapTiles(sourceIndex, targetIndex);
+            }
+            selectedTileIndex = null;
+            renderBoard();
+        }
+
+        function swapTiles(i, j) {
+            const temp = tiles[i];
+            tiles[i] = tiles[j];
+            tiles[j] = temp;
+
+            moveCount++;
+            updateStatsDisplay();
+            checkVictory();
+        }
+
+        function shuffleTiles() {
+            // Fisher-Yates Shuffle
+            for (let i = tiles.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+            }
+
+            // Ensure not already solved on shuffle
+            if (isPuzzleSolved()) {
+                shuffleTiles();
+                return;
+            }
+
+            selectedTileIndex = null;
+            moveCount = 0;
+            timerSeconds = 0;
+            stopTimer();
+            gameStarted = false;
+            updateStatsDisplay();
+            renderBoard();
+        }
+
+        function isPuzzleSolved() {
+            return tiles.every((tile, index) => tile.id === index);
+        }
+
+        function checkVictory() {
+            if (isPuzzleSolved()) {
+                stopTimer();
+                setTimeout(() => {
+                    triggerVictory();
+                }, 300);
+            }
+        }
+
+        function startTimer() {
+            if (gameStarted) return;
+            gameStarted = true;
+            timerInterval = setInterval(() => {
+                timerSeconds++;
+                updateStatsDisplay();
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        function updateStatsDisplay() {
+            document.getElementById('move-count').innerText = moveCount;
+            document.getElementById('timer-display').innerText = formatTime(timerSeconds);
+        }
+
+        function triggerVictory() {
+            // Confetti Celebration
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 160,
+                    spread: 100,
+                    origin: { y: 0.6 }
+                });
+            }
+
+            document.getElementById('final-moves').innerText = moveCount;
+            document.getElementById('final-time').innerText = formatTime(timerSeconds);
+            document.getElementById('victory-modal').classList.remove('hidden');
+
+            speakSpeechText();
+        }
+
+        function speakSpeechText() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(NARRATION_TEXT);
+                utterance.lang = 'pt-BR';
+                utterance.pitch = 1.35; // Kid-like cute voice pitch
+                utterance.rate = 0.95;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function toggleHintModal(show) {
+            const modal = document.getElementById('hint-modal');
+            if (show) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function restartGame() {
+            document.getElementById('victory-modal').classList.add('hidden');
+            shuffleTiles();
+        }
+
+        // Initialize Application on Window Load
+        window.onload = function() {
+            initGame();
+        };
+    </script>
+</body>
+</html>
